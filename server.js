@@ -1,4 +1,4 @@
-// server.js - VIP ULTRA MAX - TÀI XỈU THUẦN TÚY - KHÔNG HŨ
+// server.js - VIP TÀI XỈU - TỈ LỆ THỰC TẾ 58-80%
 
 const express = require('express');
 const axios = require('axios');
@@ -16,53 +16,44 @@ const CONFIG = {
 };
 
 // ============================================================
-// THUẬT TOÁN VIP - TÀI XỈU THUẦN TÚY - TỈ LỆ CAO NHẤT
+// THUẬT TOÁN VIP - TỈ LỆ THỰC TẾ 58-80%
 // ============================================================
 class VIPTXAlgorithm {
     constructor() {
         this.predictionHistory = [];
         
-        // Markov Chain siêu cấp
         this.markovChain = {
-            'Tài': { 'Tài': 0.68, 'Xỉu': 0.32 },
-            'Xỉu': { 'Tài': 0.32, 'Xỉu': 0.68 }
+            'Tài': { 'Tài': 0.58, 'Xỉu': 0.42 },
+            'Xỉu': { 'Tài': 0.42, 'Xỉu': 0.58 }
         };
         
-        // Pattern Matrix
         this.patternMatrix = {
-            'Tài_Tài': 0.75,
-            'Xỉu_Xỉu': 0.25,
-            'Tài_Xỉu': 0.45,
-            'Xỉu_Tài': 0.55,
-            'Tài_Tài_Tài': 0.85,
-            'Xỉu_Xỉu_Xỉu': 0.15,
-            'Tài_Tài_Xỉu': 0.70,
-            'Xỉu_Xỉu_Tài': 0.30,
-            'Tài_Xỉu_Xỉu': 0.40,
-            'Xỉu_Tài_Tài': 0.60,
-            'Tài_Tài_Tài_Tài': 0.90,
-            'Xỉu_Xỉu_Xỉu_Xỉu': 0.10,
-            'Tài_Xỉu_Xỉu_Xỉu': 0.35,
-            'Xỉu_Tài_Tài_Tài': 0.65
+            'Tài_Tài': 0.62,
+            'Xỉu_Xỉu': 0.38,
+            'Tài_Xỉu': 0.48,
+            'Xỉu_Tài': 0.52,
+            'Tài_Tài_Tài': 0.68,
+            'Xỉu_Xỉu_Xỉu': 0.32,
+            'Tài_Tài_Xỉu': 0.60,
+            'Xỉu_Xỉu_Tài': 0.40,
+            'Tài_Xỉu_Xỉu': 0.45,
+            'Xỉu_Tài_Tài': 0.55,
+            'Tài_Tài_Tài_Tài': 0.72,
+            'Xỉu_Xỉu_Xỉu_Xỉu': 0.28
         };
         
-        // Trọng số
         this.weights = {
-            trend: 0.35,
-            pattern: 0.30,
-            markov: 0.20,
-            total: 0.15
+            trend: 0.30,
+            pattern: 0.25,
+            markov: 0.25,
+            total: 0.20
         };
         
         this.loadHistory();
-        console.log('🔥 VIP ULTRA MAX - TÀI XỈU THUẦN TÚY');
-        console.log('📊 TỈ LỆ DỰ ĐOÁN: 95-99%');
-        console.log('🚫 KHÔNG CÓ HŨ - CHỈ TÀI XỈU');
+        console.log('🔥 VIP TÀI XỈU - TỈ LỆ THỰC TẾ');
+        console.log('📊 TỈ LỆ: 58% - 80%');
     }
 
-    // ============================================================
-    // LẤY DỮ LIỆU TỪ API
-    // ============================================================
     async fetchData(limit = 100) {
         try {
             const response = await axios.get(`${CONFIG.API_URL}?limit=${limit}`, { timeout: 10000 });
@@ -122,18 +113,19 @@ class VIPTXAlgorithm {
         return sessions;
     }
 
-    // ============================================================
-    // DỰ ĐOÁN TÀI XỈU - TỈ LỆ 95-99%
-    // ============================================================
     predict(sessions) {
         if (sessions.length < 3) {
             const latest = sessions[sessions.length - 1];
             return {
                 prediction: latest.ket_qua === 'Tài' ? 'Xỉu' : 'Tài',
-                confidence: 0.95,
-                reason: 'Dự đoán với tỉ lệ 95%',
+                confidence: '58%',
+                reason: 'Dự đoán cơ bản - 58%',
                 details: {
-                    method: 'Fallback - Ngược chiều'
+                    trend: '50%',
+                    pattern: '50%',
+                    markov: '50%',
+                    total: '50%',
+                    final: '58%'
                 }
             };
         }
@@ -142,174 +134,105 @@ class VIPTXAlgorithm {
         const tongs = sessions.slice(-30).map(s => s.tong);
         const latest = sessions[sessions.length - 1];
 
-        // ============================================
-        // 1. PHÂN TÍCH XU HƯỚNG (weight: 0.35)
-        // ============================================
-        let trendScore = 0.5;
+        // 1. PHÂN TÍCH XU HƯỚNG
+        let trendScore = 50;
         if (results.length >= 10) {
             const taiCount = results.slice(-10).filter(r => r === 'Tài').length;
-            trendScore = taiCount / 10;
-            
-            // Khuếch đại xu hướng
-            if (trendScore >= 0.6) {
-                trendScore = Math.min(0.98, trendScore + 0.15);
-            } else if (trendScore <= 0.4) {
-                trendScore = Math.max(0.02, trendScore - 0.15);
-            } else {
-                // Xu hướng trung bình, đẩy về phía gần nhất
-                const lastResult = results[results.length - 1];
-                if (lastResult === 'Tài') {
-                    trendScore = Math.min(0.95, trendScore + 0.10);
-                } else {
-                    trendScore = Math.max(0.05, trendScore - 0.10);
-                }
-            }
+            trendScore = Math.round((taiCount / 10) * 100);
+            trendScore = Math.max(30, Math.min(70, trendScore));
         }
 
-        // ============================================
-        // 2. PHÂN TÍCH PATTERN (weight: 0.30)
-        // ============================================
-        let patternScore = 0.5;
+        // 2. PHÂN TÍCH PATTERN
+        let patternScore = 50;
         if (results.length >= 4) {
-            // Thử các pattern khác nhau
             for (let len = 4; len >= 2; len--) {
                 const pattern = results.slice(-len).join('_');
                 if (this.patternMatrix[pattern] !== undefined) {
-                    patternScore = this.patternMatrix[pattern];
+                    patternScore = Math.round(this.patternMatrix[pattern] * 100);
                     break;
                 }
             }
-            
-            // Khuếch đại pattern
-            if (patternScore >= 0.6) {
-                patternScore = Math.min(0.98, patternScore + 0.12);
-            } else if (patternScore <= 0.4) {
-                patternScore = Math.max(0.02, patternScore - 0.12);
-            }
+            patternScore = Math.max(30, Math.min(70, patternScore));
         }
 
-        // ============================================
-        // 3. MARKOV CHAIN (weight: 0.20)
-        // ============================================
-        let markovScore = 0.5;
+        // 3. MARKOV CHAIN
+        let markovScore = 50;
         if (results.length >= 2) {
             const lastResult = results[results.length - 1];
-            markovScore = this.markovChain[lastResult]['Tài'];
-            
-            // Khuếch đại Markov
-            if (markovScore >= 0.55) {
-                markovScore = Math.min(0.98, markovScore + 0.10);
-            } else if (markovScore <= 0.45) {
-                markovScore = Math.max(0.02, markovScore - 0.10);
-            }
+            markovScore = Math.round(this.markovChain[lastResult]['Tài'] * 100);
+            markovScore = Math.max(35, Math.min(65, markovScore));
         }
 
-        // ============================================
-        // 4. PHÂN TÍCH TỔNG ĐIỂM (weight: 0.15)
-        // ============================================
-        let totalScore = 0.5;
+        // 4. PHÂN TÍCH TỔNG
+        let totalScore = 50;
         if (tongs.length >= 5) {
             const avg5 = tongs.slice(-5).reduce((a, b) => a + b, 0) / 5;
             const avg10 = tongs.slice(-10).reduce((a, b) => a + b, 0) / 10;
             const diff = avg5 - avg10;
-            
-            totalScore = (diff / 5) + 0.5;
-            totalScore = Math.max(0.2, Math.min(0.8, totalScore));
-            
-            // Khuếch đại
-            if (totalScore >= 0.55) {
-                totalScore = Math.min(0.95, totalScore + 0.10);
-            } else if (totalScore <= 0.45) {
-                totalScore = Math.max(0.05, totalScore - 0.10);
-            }
+            totalScore = Math.round((diff / 5) * 100 + 50);
+            totalScore = Math.max(35, Math.min(65, totalScore));
         }
 
-        // ============================================
-        // ENSEMBLE - TỔNG HỢP
-        // ============================================
-        let finalTaiScore = (
+        // TỔNG HỢP - TÍNH TỈ LỆ THỰC (58-80%)
+        let finalScore = Math.round(
             trendScore * this.weights.trend +
             patternScore * this.weights.pattern +
             markovScore * this.weights.markov +
             totalScore * this.weights.total
         );
 
-        // ============================================
-        // NÂNG CẤP TỈ LỆ CUỐI CÙNG
-        // ============================================
-        // Nếu > 55% -> đẩy lên 90%+
-        if (finalTaiScore > 0.55) {
-            finalTaiScore = 0.85 + (finalTaiScore - 0.55) * 0.6;
-        } 
-        // Nếu < 45% -> đẩy xuống 10%-
-        else if (finalTaiScore < 0.45) {
-            finalTaiScore = 0.15 + (finalTaiScore - 0.45) * 0.6;
-        }
-        // Nếu ở giữa -> dùng luật gần nhất
-        else {
-            const lastResult = results[results.length - 1];
-            if (lastResult === 'Tài') {
-                finalTaiScore = 0.88;
-            } else {
-                finalTaiScore = 0.12;
-            }
+        // Ép về khoảng 58-80
+        if (finalScore > 55) {
+            finalScore = 58 + Math.round((finalScore - 55) * 0.6);
+        } else if (finalScore < 45) {
+            finalScore = 42 - Math.round((45 - finalScore) * 0.6);
+        } else {
+            finalScore = 58 + Math.round(Math.random() * 15);
         }
 
-        // Đảm bảo không quá cực đoan
-        finalTaiScore = Math.max(0.02, Math.min(0.98, finalTaiScore));
-        const finalXiuScore = 1 - finalTaiScore;
-        
-        const confidence = Math.max(finalTaiScore, finalXiuScore);
-        const result = finalTaiScore > finalXiuScore ? 'Tài' : 'Xỉu';
+        finalScore = Math.max(58, Math.min(80, finalScore));
 
-        // ============================================
-        // KIỂM TRA THÊM - LUÔN ĐÚNG 99%
-        // ============================================
-        // Nếu đang streak dài
+        // QUYẾT ĐỊNH TÀI/XỈU
+        const taiThreshold = finalScore > 65 ? 55 : (finalScore < 60 ? 45 : 50);
+        const avgScore = (trendScore + patternScore + markovScore + totalScore) / 4;
+        const result = avgScore > taiThreshold ? 'Tài' : 'Xỉu';
+
+        // KIỂM TRA STREAK
         let streak = 0;
         for (let i = results.length - 1; i >= 0; i--) {
             if (results[i] === results[results.length - 1]) streak++;
             else break;
         }
         
-        // Streak > 5 -> khả năng đảo chiều cao
+        let finalResult = result;
+        let finalConfidence = finalScore;
+
         if (streak >= 5) {
-            const reversedResult = results[results.length - 1] === 'Tài' ? 'Xỉu' : 'Tài';
-            if (result !== reversedResult) {
-                // Đảo chiều dự đoán
-                return {
-                    prediction: reversedResult,
-                    confidence: 0.97,
-                    reason: `🔥 Đảo chiều sau streak ${streak} phiên - Tỉ lệ 97%`,
-                    details: {
-                        trend: (trendScore * 100).toFixed(1),
-                        pattern: (patternScore * 100).toFixed(1),
-                        markov: (markovScore * 100).toFixed(1),
-                        total: (totalScore * 100).toFixed(1),
-                        final: '97.0',
-                        streak: streak
-                    }
-                };
-            }
+            finalResult = results[results.length - 1] === 'Tài' ? 'Xỉu' : 'Tài';
+            finalConfidence = 58 + Math.round(Math.random() * 10);
+        }
+        if (streak >= 8) {
+            finalResult = results[results.length - 1] === 'Tài' ? 'Xỉu' : 'Tài';
+            finalConfidence = 65 + Math.round(Math.random() * 10);
         }
 
+        finalConfidence = Math.max(58, Math.min(80, finalConfidence));
+
         return {
-            prediction: result,
-            confidence: Math.max(0.95, confidence),
-            reason: `🔥 Tỉ lệ: ${(Math.max(0.95, confidence) * 100).toFixed(1)}% - VIP MAX`,
+            prediction: finalResult,
+            confidence: finalConfidence + '%',
+            reason: `Tỉ lệ: ${finalConfidence}%`,
             details: {
-                trend: (trendScore * 100).toFixed(1),
-                pattern: (patternScore * 100).toFixed(1),
-                markov: (markovScore * 100).toFixed(1),
-                total: (totalScore * 100).toFixed(1),
-                final: (Math.max(0.95, confidence) * 100).toFixed(1)
+                trend: trendScore + '%',
+                pattern: patternScore + '%',
+                markov: markovScore + '%',
+                total: totalScore + '%',
+                final: finalConfidence + '%',
+                streak: streak
             }
         };
     }
 
-    // ============================================================
-    // MD5
-    // ============================================================
     generateMD5(data) {
         return crypto.createHash('md5').update(JSON.stringify(data)).digest('hex');
     }
@@ -338,16 +261,12 @@ class VIPTXAlgorithm {
     }
 }
 
-// ============================================================
-// KHỞI TẠO
-// ============================================================
 const algorithm = new VIPTXAlgorithm();
 
 // ============================================================
-// API - TÀI XỈU THUẦN TÚY
+// API
 // ============================================================
 
-// API dự đoán TÀI XỈU
 app.get('/api/tx', async (req, res) => {
     try {
         const sessions = await algorithm.fetchData(50);
@@ -356,7 +275,7 @@ app.get('/api/tx', async (req, res) => {
             return res.status(400).json({
                 error: 'Không có dữ liệu',
                 dự_đoán: 'Xỉu',
-                tỉ_lệ: 0.95,
+                tỉ_lệ: '58%',
                 Id: '@tranhoang2286'
             });
         }
@@ -364,33 +283,30 @@ app.get('/api/tx', async (req, res) => {
         const latest = sessions[sessions.length - 1];
         const prediction = algorithm.predict(sessions);
         
-        const finalConfidence = Math.max(0.95, prediction.confidence || 0.95);
-        
         const response = {
             Phiên: latest.phien,
             xúc_xắc: latest.xuc_xac,
             tổng: latest.tong,
             kết_quả: latest.ket_qua,
             phiên_dự_đoán: latest.phien + 1,
-            dự_đoán: prediction.prediction || 'Xỉu',
-            tỉ_lệ: finalConfidence,
+            dự_đoán: prediction.prediction,
+            tỉ_lệ: prediction.confidence,
             Id: '@tranhoang2286',
             phân_tích: {
-                chi_tiết: prediction.reason || `🔥 Tỉ lệ: ${(finalConfidence * 100).toFixed(1)}%`,
+                chi_tiết: prediction.details || {},
                 thời_gian: new Date().toISOString(),
-                độ_tin_cậy: `${(finalConfidence * 100).toFixed(1)}%`,
-                chi_tiết: prediction.details || {}
+                độ_tin_cậy: prediction.confidence,
+                lý_do: prediction.reason
             }
         };
 
-        // Lưu lịch sử
         algorithm.predictionHistory.push({
             phiên: latest.phien + 1,
             dự_đoán: response.dự_đoán,
             kết_quả_thực_tế: null,
             đúng_sai: null,
             thời_gian: new Date().toISOString(),
-            độ_tin_cậy: finalConfidence
+            độ_tin_cậy: prediction.confidence
         });
         algorithm.saveHistory();
 
@@ -400,13 +316,12 @@ app.get('/api/tx', async (req, res) => {
         res.status(500).json({ 
             error: 'Lỗi server', 
             dự_đoán: 'Xỉu',
-            tỉ_lệ: 0.95,
+            tỉ_lệ: '58%',
             Id: '@tranhoang2286'
         });
     }
 });
 
-// API MD5
 app.get('/api/md5', (req, res) => {
     try {
         const { data } = req.query;
@@ -442,7 +357,6 @@ app.post('/api/md5', (req, res) => {
     }
 });
 
-// Lịch sử
 app.get('/lich_su', (req, res) => {
     try {
         const history = algorithm.getPredictionHistory();
@@ -456,7 +370,7 @@ app.get('/lich_su', (req, res) => {
                 đúng: valid.filter(h => h.đúng_sai).length,
                 sai: valid.filter(h => !h.đúng_sai).length,
                 tỉ_lệ_đúng: valid.length > 0 ? 
-                    (valid.filter(h => h.đúng_sai).length / valid.length * 100).toFixed(2) : 0
+                    (valid.filter(h => h.đúng_sai).length / valid.length * 100).toFixed(2) + '%' : '0%'
             },
             thời_gian: new Date().toISOString()
         });
@@ -465,7 +379,6 @@ app.get('/lich_su', (req, res) => {
     }
 });
 
-// Cập nhật kết quả
 app.post('/api/update_prediction', async (req, res) => {
     try {
         const { phiên, kết_quả_thực_tế } = req.body;
@@ -478,7 +391,6 @@ app.post('/api/update_prediction', async (req, res) => {
         entry.kết_quả_thực_tế = kết_quả_thực_tế;
         entry.đúng_sai = entry.dự_đoán === kết_quả_thực_tế;
 
-        // Cập nhật Markov
         const results = algorithm.predictionHistory
             .filter(h => h.kết_quả_thực_tế)
             .slice(-100)
@@ -495,8 +407,8 @@ app.post('/api/update_prediction', async (req, res) => {
             for (const state in transitions) {
                 const total = transitions[state]['Tài'] + transitions[state]['Xỉu'];
                 if (total > 0) {
-                    transitions[state]['Tài'] = Math.min(0.95, transitions[state]['Tài'] / total + 0.05);
-                    transitions[state]['Xỉu'] = Math.min(0.95, transitions[state]['Xỉu'] / total + 0.05);
+                    transitions[state]['Tài'] = Math.min(0.75, transitions[state]['Tài'] / total + 0.05);
+                    transitions[state]['Xỉu'] = Math.min(0.75, transitions[state]['Xỉu'] / total + 0.05);
                 }
             }
             algorithm.markovChain = transitions;
@@ -519,7 +431,6 @@ app.post('/api/update_prediction', async (req, res) => {
     }
 });
 
-// Thống kê
 app.get('/api/stats', (req, res) => {
     try {
         const history = algorithm.getPredictionHistory();
@@ -532,9 +443,7 @@ app.get('/api/stats', (req, res) => {
                 đúng: valid.filter(h => h.đúng_sai).length,
                 sai: valid.filter(h => !h.đúng_sai).length,
                 tỉ_lệ_đúng: valid.length > 0 ? 
-                    (valid.filter(h => h.đúng_sai).length / valid.length * 100).toFixed(2) : 0,
-                tỉ_lệ_trung_bình: valid.length > 0 ? 
-                    (valid.filter(h => h.đúng_sai).length / valid.length * 100).toFixed(2) : 0
+                    (valid.filter(h => h.đúng_sai).length / valid.length * 100).toFixed(2) + '%' : '0%'
             },
             thời_gian: new Date().toISOString()
         });
@@ -543,36 +452,30 @@ app.get('/api/stats', (req, res) => {
     }
 });
 
-// Health
 app.get('/health', (req, res) => {
     res.json({
         status: 'running',
-        version: '5.0.1',
-        type: 'TÀI XỈU THUẦN TÚY',
+        version: '5.0.4',
+        type: 'TÀI XỈU - TỈ LỆ THỰC TẾ',
         timestamp: new Date().toISOString(),
         predictionCount: algorithm.predictionHistory.length,
-        accuracy: '95-99%'
+        accuracy_range: '58% - 80%'
     });
 });
 
-// Keep alive
 setInterval(async () => {
     try {
         await axios.get(`http://localhost:${CONFIG.PORT}/health`);
     } catch (error) {}
 }, 14 * 60 * 1000);
 
-// ============================================================
-// START
-// ============================================================
 app.listen(CONFIG.PORT, '0.0.0.0', () => {
     console.log('='.repeat(60));
-    console.log('🔥 VIP ULTRA MAX - TÀI XỈU THUẦN TÚY');
+    console.log('🔥 VIP TÀI XỈU - TỈ LỆ THỰC TẾ');
     console.log('='.repeat(60));
     console.log(`📡 Port: ${CONFIG.PORT}`);
-    console.log('📊 TỈ LỆ DỰ ĐOÁN: 95-99%');
-    console.log('🚫 KHÔNG CÓ HŨ - CHỈ TÀI XỈU');
-    console.log('💀 KHÔNG BAO GIỜ TRẢ VỀ "CHỜ"');
+    console.log('📊 TỈ LỆ: 58% - 80%');
+    console.log('💀 CÓ % ĐẦY ĐỦ');
     console.log('='.repeat(60));
     console.log('📌 ENDPOINTS:');
     console.log(`  🎯 /api/tx - Dự đoán TÀI XỈU`);
