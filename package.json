@@ -1,17 +1,21 @@
 
 {
-  "name": "vip-tx-analysis",
-  "version": "2.0.0",
-  "description": "Thuật toán phân tích Tài Xỉu VIP cực mạnh với AI và Neural Network - @tranhoang2286",
+  "name": "vip-tai-xiu-objective",
+  "version": "5.0.6",
+  "description": "VIP TÀI XỈU - KHÁCH QUAN - KHÔNG THIÊN VỊ - @tranhoang2286",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "crypto": "^1.0.1",
+    "cors": "^2.8.5"
   },
   "engines": {
     "node": ">=14.0.0"
-  }
+  },
+  "author": "@tranhoang2286"
 }
