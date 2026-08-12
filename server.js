@@ -12,7 +12,7 @@ app.use(express.json());
 // Cấu hình
 const CONFIG = {
     API_URL: 'https://wtx.macminim6.online/v1/tx/sessions',
-    PORT: 3000,
+    PORT: process.env.PORT || 3000,
     HISTORY_FILE: 'prediction_history.json',
     MAX_HISTORY: 1000,
     LEARNING_RATE: 0.01,
@@ -39,8 +39,7 @@ class VIPTXAlgorithm {
     }
 
     initializeWeights() {
-        // Khởi tạo mạng neural với kiến trúc sâu
-        const layers = [6, ...this.hiddenLayers, 2]; // Input: 6 features, Output: 2 (Tài/Xỉu)
+        const layers = [6, ...this.hiddenLayers, 2];
         
         for (let i = 0; i < layers.length - 1; i++) {
             const scale = Math.sqrt(2.0 / layers[i]);
@@ -55,12 +54,10 @@ class VIPTXAlgorithm {
         }
     }
 
-    // Hàm kích hoạt ReLU
     relu(x) {
         return Math.max(0, x);
     }
 
-    // Hàm kích hoạt Softmax
     softmax(x) {
         const max = Math.max(...x);
         const exp = x.map(v => Math.exp(v - max));
@@ -68,7 +65,6 @@ class VIPTXAlgorithm {
         return exp.map(v => v / sum);
     }
 
-    // Forward pass qua mạng neural
     forwardPass(input) {
         let current = input;
         const activations = [current];
@@ -98,14 +94,12 @@ class VIPTXAlgorithm {
         return this.softmax(current);
     }
 
-    // Trích xuất đặc trưng từ dữ liệu
     extractFeatures(sessions) {
         if (sessions.length < 2) return null;
         
         const latest = sessions[sessions.length - 1];
         const prev = sessions[sessions.length - 2];
         
-        // Tính toán các đặc trưng phức tạp
         const features = [];
         
         // 1. Tổng hiện tại (chuẩn hóa)
@@ -136,19 +130,16 @@ class VIPTXAlgorithm {
         return features;
     }
 
-    // Phân tích pattern của xúc xắc
     analyzeDicePattern(sessions) {
         if (sessions.length < 3) return 0.5;
         
         const last = sessions[sessions.length - 1];
         const patterns = [];
         
-        // Phân tích từng mặt xúc xắc
         for (let i = 0; i < 3; i++) {
             const values = sessions.slice(-10).map(s => s.xuc_xac[i]);
             const lastValue = last.xuc_xac[i];
             
-            // Tìm pattern lặp lại
             let patternFound = false;
             for (let j = 1; j < 6; j++) {
                 const pattern = values.slice(-j);
@@ -173,19 +164,16 @@ class VIPTXAlgorithm {
         return patterns.reduce((a, b) => a + b, 0) / 3;
     }
 
-    // Dự đoán với phân tích đa chiều
     predict(sessions) {
         if (sessions.length < 5) {
             return { prediction: 'Chờ', confidence: 0, reason: 'Không đủ dữ liệu' };
         }
 
-        // Trích xuất đặc trưng
         const features = this.extractFeatures(sessions);
         if (!features) {
             return { prediction: 'Chờ', confidence: 0, reason: 'Không thể trích xuất đặc trưng' };
         }
 
-        // Dự đoán với neural network
         const prediction = this.forwardPass(features);
         const taiConfidence = prediction[0];
         const xiuConfidence = prediction[1];
@@ -193,10 +181,8 @@ class VIPTXAlgorithm {
         const maxConfidence = Math.max(taiConfidence, xiuConfidence);
         const result = taiConfidence > xiuConfidence ? 'Tài' : 'Xỉu';
         
-        // Phân tích thêm các yếu tố khác
         const additionalFactors = this.analyzeAdditionalFactors(sessions);
         
-        // Kết hợp các yếu tố
         let finalConfidence = maxConfidence;
         let finalResult = result;
         
@@ -226,12 +212,10 @@ class VIPTXAlgorithm {
         };
     }
 
-    // Phân tích các yếu tố bổ sung
     analyzeAdditionalFactors(sessions) {
         const recent = sessions.slice(-20);
         const results = recent.map(s => s.ket_qua);
         
-        // Phân tích pattern
         let patternStrength = 0;
         for (let i = 1; i < 5; i++) {
             const patterns = results.slice(-i);
@@ -247,7 +231,6 @@ class VIPTXAlgorithm {
             }
         }
         
-        // Phân tích khả năng đảo chiều
         const lastResults = results.slice(-10);
         const taiCount = lastResults.filter(r => r === 'Tài').length;
         const reversalProbability = Math.abs(taiCount / lastResults.length - 0.5) * 2;
@@ -258,7 +241,6 @@ class VIPTXAlgorithm {
         };
     }
 
-    // Huấn luyện mô hình với dữ liệu mới
     trainModel(sessions, actualResult) {
         const features = this.extractFeatures(sessions);
         if (!features) return;
@@ -266,22 +248,18 @@ class VIPTXAlgorithm {
         const target = actualResult === 'Tài' ? [1, 0] : [0, 1];
         const prediction = this.forwardPass(features);
         
-        // Backpropagation - Cập nhật trọng số
         let error = prediction.map((p, i) => p - target[i]);
         
-        // Đảo ngược qua các layer
         for (let i = Object.keys(this.weights).length - 1; i >= 0; i--) {
             const w = this.weights[`W${i}`];
             const b = this.biases[`b${i}`];
             const prevError = error;
             
-            // Cập nhật biases
             for (let j = 0; j < b.length; j++) {
                 this.velocity[`b${i}`][j] = this.momentum * this.velocity[`b${i}`][j] - this.learningRate * prevError[j];
                 b[j] += this.velocity[`b${i}`][j];
             }
             
-            // Cập nhật weights
             for (let j = 0; j < w.length; j++) {
                 for (let k = 0; k < w[0].length; k++) {
                     const grad = prevError[k];
@@ -290,32 +268,23 @@ class VIPTXAlgorithm {
                 }
             }
             
-            // Tính error cho layer trước
             if (i > 0) {
                 const prevW = this.weights[`W${i-1}`];
-                const prevAct = []; // activation từ layer trước
-                
                 error = Array(prevW.length).fill(0);
                 for (let j = 0; j < prevW.length; j++) {
                     for (let k = 0; k < prevW[0].length; k++) {
                         error[j] += prevError[k] * prevW[j][k];
                     }
-                    error[j] *= this.reluDerivative(features[j]); // Gradient clipping
+                    error[j] *= features[j] > 0 ? 1 : 0.01;
                 }
             }
         }
     }
 
-    reluDerivative(x) {
-        return x > 0 ? 1 : 0.01;
-    }
-
-    // Lấy lịch sử dự đoán
     getPredictionHistory() {
         return this.predictionHistory;
     }
 
-    // Lưu lịch sử
     saveHistory() {
         try {
             const data = {
@@ -328,7 +297,6 @@ class VIPTXAlgorithm {
         }
     }
 
-    // Tải lịch sử
     loadHistory() {
         try {
             if (fs.existsSync(CONFIG.HISTORY_FILE)) {
@@ -341,7 +309,6 @@ class VIPTXAlgorithm {
         }
     }
 
-    // Lấy dữ liệu từ API
     async fetchData(limit = 100) {
         try {
             const response = await axios.get(`${CONFIG.API_URL}?limit=${limit}`);
@@ -352,7 +319,6 @@ class VIPTXAlgorithm {
         }
     }
 
-    // Tạo hash MD5
     generateMD5(data) {
         return crypto.createHash('md5').update(JSON.stringify(data)).digest('hex');
     }
@@ -379,10 +345,8 @@ app.get('/api/tx', async (req, res) => {
         const latestSession = sessions[sessions.length - 1];
         const nextSessionNumber = latestSession.phien + 1;
 
-        // Dự đoán
         const prediction = algorithm.predict(sessions);
         
-        // Tạo response
         const response = {
             Phiên: latestSession.phien,
             xúc_xắc: latestSession.xuc_xac,
@@ -399,7 +363,6 @@ app.get('/api/tx', async (req, res) => {
             }
         };
 
-        // Lưu vào lịch sử (sẽ cập nhật sau khi có kết quả thực tế)
         const historyEntry = {
             phiên: nextSessionNumber,
             dự_đoán: prediction.prediction,
@@ -432,7 +395,7 @@ app.get('/lich_su', (req, res) => {
         };
 
         res.json({
-            lịch_sử: history.slice(-100), // 100 dự đoán gần nhất
+            lịch_sử: history.slice(-100),
             thống_kê: stats,
             thời_gian: new Date().toISOString()
         });
@@ -465,13 +428,11 @@ app.post('/api/update_prediction', async (req, res) => {
     try {
         const { phiên, kết_quả_thực_tế } = req.body;
         
-        // Tìm và cập nhật dự đoán
         const entry = algorithm.predictionHistory.find(p => p.phiên === phiên);
         if (entry) {
             entry.kết_quả_thực_tế = kết_quả_thực_tế;
             entry.đúng_sai = entry.dự_đoán === kết_quả_thực_tế;
             
-            // Huấn luyện mô hình
             const sessions = await algorithm.fetchData(100);
             const sessionIndex = sessions.findIndex(s => s.phien === phiên - 1);
             if (sessionIndex >= 0) {
@@ -500,7 +461,6 @@ app.get('/api/stats', (req, res) => {
         const history = algorithm.getPredictionHistory();
         const valid = history.filter(h => h.đúng_sai !== null);
         
-        // Phân tích chi tiết
         const stats = {
             tổng_phiên: history.length,
             đã_xác_nhận: valid.length,
@@ -508,14 +468,12 @@ app.get('/api/stats', (req, res) => {
             sai: valid.filter(h => !h.đúng_sai).length,
             tỉ_lệ_đúng: valid.length > 0 ? (valid.filter(h => h.đúng_sai).length / valid.length * 100).toFixed(2) : 0,
             
-            // Phân tích theo độ tin cậy
             phân_tích_độ_tin_cậy: {
                 cao: valid.filter(h => h.độ_tin_cậy >= 0.8).length,
                 trung_bình: valid.filter(h => h.độ_tin_cậy >= 0.5 && h.độ_tin_cậy < 0.8).length,
                 thấp: valid.filter(h => h.độ_tin_cậy < 0.5).length
             },
             
-            // Dự đoán gần đây
             gần_đây: valid.slice(-10).map(h => ({
                 phiên: h.phiên,
                 dự_đoán: h.dự_đoán,
@@ -542,11 +500,20 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Keep alive cho Render
+setInterval(async () => {
+    try {
+        await axios.get(`http://localhost:${CONFIG.PORT}/health`);
+        console.log('🔄 Keep-alive ping thành công');
+    } catch (error) {
+        console.log('⚠️ Keep-alive ping thất bại');
+    }
+}, 14 * 60 * 1000);
+
 // Khởi động server
-const PORT = CONFIG.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 VIP TX Analysis Server đang chạy tại http://localhost:${PORT}`);
-    console.log(`📊 API Docs: http://localhost:${PORT}/health`);
+app.listen(CONFIG.PORT, '0.0.0.0', () => {
+    console.log(`🚀 VIP TX Analysis Server đang chạy tại port ${CONFIG.PORT}`);
+    console.log(`📊 Health Check: http://localhost:${CONFIG.PORT}/health`);
     console.log(`🎯 Dự đoán: GET /api/tx`);
     console.log(`📜 Lịch sử: GET /lich_su`);
     console.log(`🔐 MD5: POST /api/md5`);
